@@ -1,3 +1,15 @@
+/* 
+    Minimal example to use FreeRTOS SMP with task affinity enabled.
+
+    Create TWO very simple tasks and run each on PICOs Cores:
+    - C0 : print message to console and blink an LED
+    - C1 : print message to console
+
+    note : use minicom to observe console messages
+    $ minicom -b 115200 -o -D /dev/ttyACM0
+
+*/
+
 #include <stdio.h>
 
 #include "FreeRTOS.h"
@@ -17,12 +29,15 @@ static void prvSetupHardware(void);
 static void prvTask_C0(void *pvParameters);
 static void prvTask_C1(void *pvParameters);
 
+/**/
+/* PUBLIC FUNCTIONS */
+/**/
+
 /* FreeRTOS callbacks */
 void vApplicationMallocFailedHook( void );
 void vApplicationIdleHook( void );
 void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName );
 void vApplicationTickHook( void );
-
 
 void vApplicationMallocFailedHook(void){
     /* Force an assert. */
@@ -36,6 +51,7 @@ void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName){
 }
 
 
+/** Creates tasks and allocates to a particular PICO core : C0,C1 */
 int main(){
     TaskHandle_t xHandle[2];
     
@@ -56,13 +72,19 @@ int main(){
 
 }
 
+/**/
 /* PRIVATE FUNCTIONS : implementation */
+/**/
+
+/** Initialize PICO's required HW */
 static void prvSetupHardware(void){
     stdio_init_all();
     gpio_init(PICO_DEFAULT_LED_PIN);
     gpio_set_dir(PICO_DEFAULT_LED_PIN,GPIO_OUT);
     gpio_put(PICO_DEFAULT_LED_PIN, 1);
 }
+
+/** run something on C0 : print to console and blink an Led */
 static void prvTask_C0(void *pvParameters){
     
     while(1){
@@ -73,6 +95,7 @@ static void prvTask_C0(void *pvParameters){
         vTaskDelay(TASK_DELAY_C0_MS);
     }
 }
+/** run something on C1 : print to console */
 static void prvTask_C1(void *pvParameters){
     while(1){
         printf("Task C1 on %d\n", get_core_num());
